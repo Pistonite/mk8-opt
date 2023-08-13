@@ -1,14 +1,16 @@
 import { BuildSelection } from "core";
-import { Stat } from "data";
+import { Stat, StatKey } from "data";
 
 import { StatTable } from "./StatTable";
 
 export const BuildSelectionInput: React.FC<BuildSelection<string> & {
     title: string,
     items: Readonly<Record<string, Stat>>,
+    considerStats: StatKey[],
 }> = ({
     title,
     input,
+    considerStats,
     setInputValue,
     isPending,
     found,
@@ -34,7 +36,11 @@ export const BuildSelectionInput: React.FC<BuildSelection<string> & {
             }
             {
                 unique ?
-                <StatTable name={unique} stat={items[unique]}/>
+                <StatTable 
+                    name={unique} 
+                    stat={items[unique]}
+                    considerStats={considerStats}
+                />
                 :
                 <ul className="result-list">
                     {filteredResult.map((item, index) => (

@@ -118,7 +118,7 @@ categories.forEach((category) => {
 /// Build type
 outputString += `export type Build = [${categories.join(", ")}]\n`;
 
-/// switch category function
+/// category function
 categories.forEach((category, i) => {
     outputString += `export const ${category}Names = [${names[category].map(n => JSON.stringify(n)).join(", ")}] as const;\n`
     outputString += `export const Fuzzy${category}Finder = new Fuse(${category}Names, FuseOptions);\n`;
@@ -133,7 +133,16 @@ categories.forEach((category, i) => {
     outputString += "};\n\n";
 });
 
-/// fuzzyF
+/// Iterator
+outputString += "export const forEachBuild = (callback: (build: Build) => void): void => {\n";
+categories.forEach((category) => {
+    outputString += `    ${category}s.forEach((${category}) => {\n`;
+});
+outputString += `        callback([${categories.join(", ")}]);\n`;
+categories.forEach(() => {
+    outputString += "    });\n";
+});
+outputString += "    };\n\n";
 
 /// getBuildStat function
 outputString += "export const getBuildStat = (build: Build): Stat => {\n";

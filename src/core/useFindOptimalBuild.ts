@@ -1,148 +1,70 @@
 import { useEffect, useState, useTransition } from "react";
 
-import { Build, Characters, Gliders, Karts, Stat, StatKey, Tires, getBuildStat, hashStat, switchCharacter, switchGlider, switchKart, switchTire } from "data";
+import { Build, Stat, StatKey, StatKeys, forEachBuild, getBuildStat } from "data";
 
 export type FindOptimalResult = {
     isPending: boolean,
     moreEfficientBuilds: Build[],
 };
 
-export const useFindOptimalBuild = (currentBuild: Build, considerStats: StatKey[]): FindOptimalResult => {
+export const useFindOptimalBuild = (currentBuild: Build, considerStats: StatKey[], reversedStats: StatKey[]): FindOptimalResult => {
     const [isPending, startTransition] = useTransition();
     const [result, setResult] = useState<Build[]>([]);
 
     useEffect(() => {
         startTransition(() => {
-            setResult(findMoreEfficientBuilds(currentBuild, considerStats));
+            setResult(findMoreEfficientBuilds(currentBuild, considerStats, reversedStats));
         });
-    }, [currentBuild, considerStats]);
+    }, [currentBuild, considerStats, reversedStats]);
 
     return {
         isPending,
         moreEfficientBuilds: result,
     };
 };
-const findMoreEfficientBuilds = (currentBuild: Build, considerStats: StatKey[]): Build[] => {
-    if (considerStats.length === 0) {
-        return [];
-    }
-    return findMoreEfficientBuildsWithStatMemo(
-        currentBuild,
-        getBuildStat(currentBuild),
-        considerStats,
-        {}
-    );
-}
 
-const findMoreEfficientBuildsWithStatMemo = (
-    currentBuild: Build, 
-    currentStat: Stat, 
-    considerStats: StatKey[], 
-    memo: Record<number, Build[]>,
-): Build[] => {
-    const hash = hashStat(currentStat);
-    const memoized = memo[hash];
-    if (memoized) {
-        return memoized;
-    }
-    const output = findMoreEfficientBuildsWithStatCore(
-        currentBuild, 
-        currentStat, 
-        considerStats,
-        memo
-    );
-    memo[hash] = output;
-    return output;
-}
-
-const findMoreEfficientBuildsWithStatCore = (
-    currentBuild: Build, 
-    currentStat: Stat, 
-    considerStats: StatKey[], 
-    memo: Record<number, Build[]>,
-): Build[] => {
-
+const findMoreEfficientBuilds = (currentBuild: Build, considerStats: StatKey[], reversedStats: StatKey[]): Build[] => {
     const output: Build[] = [];
-
-    findMoreEfficientBuildsWithStatBySwitching(
-        Characters,
-        switchCharacter,
-        currentBuild,
-        currentStat,
-        considerStats,
-        output,
-        memo,
-    );
-
-    findMoreEfficientBuildsWithStatBySwitching(
-        Karts,
-        switchKart,
-        currentBuild,
-        currentStat,
-        considerStats,
-        output,
-        memo,
-    );
-
-    findMoreEfficientBuildsWithStatBySwitching(
-        Tires,
-        switchTire,
-        currentBuild,
-        currentStat,
-        considerStats,
-        output,
-        memo,
-    );
-
-    findMoreEfficientBuildsWithStatBySwitching(
-        Gliders,
-        switchGlider,
-        currentBuild,
-        currentStat,
-        considerStats,
-        output,
-        memo,
-    );
-
-
-    return output;
-}
-
-const findMoreEfficientBuildsWithStatBySwitching = <T extends string>(
-    items: readonly T[],
-    switchFn: (build: Build, t: T) => Build,
-    currentBuild: Build,
-    currentStat: Stat,
-    considerStats: StatKey[],
-    output: Build[],
-    memo: Record<number, Build[]>,
-) => {
-    items.forEach((item) => {
-        const newBuild = switchFn(currentBuild, item);
-        const newStat = getBuildStat(newBuild);
-        if (isStatMoreEfficient(currentStat, newStat, considerStats)) {
-            const betterBuilds = findMoreEfficientBuildsWithStatMemo(
-                newBuild,
-                newStat,
-                considerStats,
-                memo
-            );
-            if (betterBuilds.length === 0) {
-                output.push(newBuild);
-            }
+    const currentStat = getBuildStat(currentBuild);
+    forEachBuild((build) => {
+        if (buildEquals(build, currentBuild)) {
+            return;
+        }
+        const newStat = getBuildStat(build);
+        if (isStatMoreEfficient(currentStat, newStat, considerStats, reversedStats)) {
+            output.push(build);
         }
     });
+
+    return output;
+}
+
+const buildEquals = (a: Build, b: Build): boolean => {
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /// Return if none of considered stats are worse and at least one is better
-const isStatMoreEfficient = (currentStat: Stat, newStat: Stat, considerStats: StatKey[]): boolean => {
+const isStatMoreEfficient = (currentStat: Stat, newStat: Stat, considerStats: StatKey[], reversedStats: StatKey[]): boolean => {
     let someBetter = false;
-    for (let i = 0; i < considerStats.length; i++) {
-        const stat = considerStats[i];
-        if (currentStat[stat] >= newStat[stat]) {
+    for (let i = 0; i < StatKeys.length; i++) {
+        const statKey = StatKeys[i];
+        if (currentStat[statKey] === newStat[statKey]) {
+            continue;
+        }
+        const isConsidered = considerStats.includes(statKey);
+        const isReversed = reversedStats.includes(statKey);
+        const isNewBetter = isReversed ? newStat[statKey] < currentStat[statKey] : newStat[statKey] > currentStat[statKey];
+        // considered stat cannot be worse
+        if (isConsidered && !isNewBetter) {
             return false;
         }
-        if (currentStat[stat] < newStat[stat]) {
+        // at least one needs to be better
+        if (isNewBetter) {
             someBetter = true;
         }
     }

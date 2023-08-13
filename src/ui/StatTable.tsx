@@ -3,8 +3,9 @@ import { Build, Stat, StatKey, StatKeys, getBuildStat } from "data"
 
 export const StatTable: React.FC<{
     name: string,
-    stat: Stat
-}> = ({name, stat}) => {
+    stat: Stat,
+    considerStats: StatKey[],
+}> = ({name, stat, considerStats}) => {
     return (
         <table className="stat-table">
             <thead>
@@ -17,7 +18,16 @@ export const StatTable: React.FC<{
                 <tr>
                     {
                         StatKeys.map((key) => (
-                            <td key={key}>{stat[key]}</td>
+                            <td 
+                                className={getStatClass(
+                                    stat, 
+                                    stat, 
+                                    key, 
+                                    considerStats,
+                                    []
+                                )} 
+                                key={key}
+                            >{stat[key]}</td>
                         ))
                     }
                 </tr>
@@ -28,8 +38,10 @@ export const StatTable: React.FC<{
 
 export const BuildTable: React.FC<{
     currentBuild: Build,
-    build: Build
-}> = ({ build, currentBuild }) => {
+    build: Build,
+    considerStats: StatKey[],
+    reversedStats: StatKey[],
+}> = ({ build, currentBuild, considerStats, reversedStats }) => {
     const currentStat = getBuildStat(currentBuild);
     const stat = getBuildStat(build);
     return (
@@ -49,7 +61,16 @@ export const BuildTable: React.FC<{
                 <tr>
                     {
                         StatKeys.map((key) => (
-                            <td className={getStatClass(currentStat, stat, key)} key={key}>{stat[key]}</td>
+                            <td 
+                                className={getStatClass(
+                                    currentStat, 
+                                    stat, 
+                                    key, 
+                                    considerStats,
+                                    reversedStats
+                                )} 
+                                key={key}
+                            >{stat[key]}</td>
                         ))
                     }
                 </tr>
@@ -58,14 +79,21 @@ export const BuildTable: React.FC<{
     );
 }
 
-const getStatClass = (currentStat: Stat, stat: Stat, key: StatKey) => {
+const getStatClass = (currentStat: Stat, stat: Stat, key: StatKey, consideredStats: StatKey[], reversedStats: StatKey[]) => {
+    const output = [];
+    const isReversed = reversedStats.includes(key);
     if (stat[key] === currentStat[key]) {
-        return "stat-equal";
+        output.push("stat-equal");
+    } else if (stat[key] > currentStat[key]) {
+        output.push(isReversed ? "stat-lower" : "stat-higher");
+    } else {
+        output.push(isReversed ? "stat-higher" : "stat-lower");
     }
-    if (stat[key] > currentStat[key]) {
-        return "stat-higher";
+
+    if (consideredStats.includes(key)) {
+        output.push("stat-considered");
     }
-    return "stat-lower";
+    return output.join(" ");
 };
 
 

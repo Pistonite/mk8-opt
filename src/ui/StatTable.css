@@ -20,3 +20,8 @@ table.stat-table td {
 .build-different {
     color: #ff8800;
 }
+
+.stat-considered {
+    text-decoration: underline;
+}
+

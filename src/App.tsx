@@ -8,6 +8,7 @@ const DATA_LINK = "https://www.mariowiki.com/Mario_Kart_8_Deluxe_in-game_statist
 
 export const App: React.FC = () => {
     const [considerStats, setConsiderStats] = useState<StatKey[]>(["mt", "sl"]);
+    const [reversedStats, setReversedStats] = useState<StatKey[]>(["wg"]);
 
     const characterBuild = useBuildSelection(findCharacter);
     const kartBuild = useBuildSelection(findKart);
@@ -30,70 +31,98 @@ export const App: React.FC = () => {
         <>
             <h1>MK8 Optimize Tool</h1>
             <p>Data is from <a href={DATA_LINK}>{DATA_LINK}</a></p>
-            <p>
-                Select the set of stats to see if you can increase any of them without sacrificing any of them.
-            </p>
             <StatSelection 
                 title="Consider Stats"
                 selected={considerStats}
                 setSelected={setConsiderStats}
             />
-            <ul>
-                <li><b>WG</b> Weight</li>
-                <li><b>AC</b> Acceleration</li>
-                <li><b>ON</b> On-Road traction</li>
-                <li><b>OF</b> (Off-Road) Traction</li>
-                <li><b>MT</b> Mini-Turbo</li>
-                <li><b>SL</b> Ground Speed</li>
-                <li><b>SW</b> Water Speed</li>
-                <li><b>SA</b> Anti-Gravity Speed</li>
-                <li><b>SG</b> Air Speed</li>
-                <li><b>TL</b> Ground Handling</li>
-                <li><b>TW</b> Water Handling</li>
-                <li><b>TA</b> Anti-Gravity Handling</li>
-                <li><b>TG</b> Air Handling</li>
-                <li><b>IV</b> Invincibility</li>
-            </ul>
+            <p>
+                The tool will find any builds where at least one stat is better, and none of the selected stats are worse.
+            </p>
+            <StatSelection 
+                title="Reversed Stats"
+                selected={reversedStats}
+                setSelected={setReversedStats}
+            />
+            <p>
+                If a stat is reversed, lower numeric value is considered better.
+            </p>
+            <div style={{ display: "flex", flexDirection: "row" }}>
+                <ul>
+                    <li><b>WG</b> Weight</li>
+                    <li><b>AC</b> Acceleration</li>
+                    <li><b>ON</b> On-Road traction</li>
+                    <li><b>OF</b> (Off-Road) Traction</li>
+                    <li><b>MT</b> Mini-Turbo</li>
+                    <li><b>IV</b> Invincibility</li>
+                </ul>
+                <ul>
+                    <li><b>SL</b> Ground Speed</li>
+                    <li><b>SW</b> Water Speed</li>
+                    <li><b>SA</b> Anti-Gravity Speed</li>
+                    <li><b>SG</b> Air Speed</li>
+                    <li><b>TL</b> Ground Handling</li>
+                    <li><b>TW</b> Water Handling</li>
+                    <li><b>TA</b> Anti-Gravity Handling</li>
+                    <li><b>TG</b> Air Handling</li>
+                </ul>
+            </div>
             <h2>Part Selection</h2>
             <div className="form">
                 <BuildSelectionInput 
                     title="Character" 
                     items={CharacterData}
+                    considerStats={considerStats}
                     {...characterBuild}
                 />
                 <BuildSelectionInput 
                     title="Kart"
                     items={KartData}
+                    considerStats={considerStats}
                     {...kartBuild}
                 />
                 <BuildSelectionInput 
                     title="Tire" 
                     items={TireData}
+                    considerStats={considerStats}
                     {...tireBuild}
                 />
                 <BuildSelectionInput 
                     title="Glider"
                     items={GliderData}
+                    considerStats={considerStats}
                     {...gliderBuild}
                 />
             </div>
             <h2>Build</h2>
             {
-                build 
-                ? <BuildSection build={build} considerStats={considerStats}/>
+                build ? 
+                    <BuildSection 
+                        build={build}
+                        considerStats={considerStats}
+                        reversedStats={reversedStats}
+                    />
                 : <p>Please finish selecting parts above </p>
             }
         </>
     );
 }
 
-const BuildSection: React.FC<{build: Build, considerStats: StatKey[]}> = ({build, considerStats}) => {
+const BuildSection: React.FC<{
+    build: Build, 
+    considerStats: StatKey[],
+    reversedStats: StatKey[]
+}> = ({build, considerStats, reversedStats}) => {
     const stat = getBuildStat(build);
-    const result = useFindOptimalBuild(build, considerStats);
+    const result = useFindOptimalBuild(build, considerStats, reversedStats);
     return (
         <>
             <p>This is your current build</p>
-            <StatTable name="Current Build" stat={stat} />
+            <StatTable 
+                name="Current Build" 
+                stat={stat} 
+                considerStats={considerStats}
+            />
             <h2>Analysis</h2>
             {
                 result.isPending && <p>Loading...</p>
@@ -104,13 +133,17 @@ const BuildSection: React.FC<{build: Build, considerStats: StatKey[]}> = ({build
             {
                 !result.isPending && result.moreEfficientBuilds.length > 0 && (
                     <>
-                        <p>Found {result.moreEfficientBuilds.length} more efficient builds</p>
+                        <p>Found {result.moreEfficientBuilds.length} build{result.moreEfficientBuilds.length === 1 ? "" : "s"} that may potentially be more efficient</p>
                         <ol>
                             {
                                 result.moreEfficientBuilds.map((newBuild, index) => (
                                     <li key={index}>
-                                        <BuildTable currentBuild={build} build={newBuild}/>
-
+                                        <BuildTable 
+                                            currentBuild={build} 
+                                            build={newBuild}
+                                            considerStats={considerStats}
+                                            reversedStats={reversedStats}
+                                        />
                                     </li>
                                 ))
                             }
