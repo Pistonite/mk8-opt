@@ -9,17 +9,33 @@ table.stat-table td {
     min-width: 25px;
 }
 
-.stat-higher {
-    background-color: #008800;
+@media(prefers-color-scheme: dark) {
+    .stat-higher {
+        background-color: #008800;
+    }
+
+    .stat-lower {
+        background-color: #880000;
+    }
+
+    .build-different {
+        color: #ff8800;
+    }
+}
+@media(prefers-color-scheme: light) {
+    .stat-higher {
+        background-color: #88ff88;
+    }
+
+    .stat-lower {
+        background-color: #ff8888;
+    }
+
+    .build-different {
+        color: #ee7700;
+    }
 }
 
-.stat-lower {
-    background-color: #880000;
-}
-
-.build-different {
-    color: #ff8800;
-}
 
 .stat-considered {
     text-decoration: underline;
