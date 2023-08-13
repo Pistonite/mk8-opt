@@ -1,0 +1,49 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+}
+
+label {
+    display: block;
+    margin: 4px;
+}
+
+input {
+    margin: 4px;
+}
+
+h1, h2 {
+    margin: 8px;
+}
+
+p {
+    margin: 4px;
+}
+
+span.error-message {
+    color: #ff6666;
+    margin-left: 4px;
+    display: inline-block;
+}
+
+span.pending-message {
+    color: #ff8800;
+    margin-left: 4px;
+    display: inline-block;
+}
+
