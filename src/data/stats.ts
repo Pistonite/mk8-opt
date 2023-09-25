@@ -181,16 +181,16 @@ export const switchGlider = (build: Build, newPart: Glider): Build => {
     return output;
 };
 
-export const forEachBuild = (callback: (build: Build) => void): void => {
-    Characters.forEach((Character) => {
-    Karts.forEach((Kart) => {
-    Tires.forEach((Tire) => {
-    Gliders.forEach((Glider) => {
-        callback([Character, Kart, Tire, Glider]);
-    });
-    });
-    });
-    });
+export const forEachBuild = async (callback: (build: Build) => Promise<void>): Promise<void> => {
+    for (const Character of Characters) {
+    for (const Kart of Karts) {
+    for (const Tire of Tires) {
+    for (const Glider of Gliders) {
+        await callback([Character, Kart, Tire, Glider]);
+    }
+    }
+    }
+    }
     };
 
 export const getBuildStat = (build: Build): Stat => {

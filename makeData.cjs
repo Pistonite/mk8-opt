@@ -134,13 +134,13 @@ categories.forEach((category, i) => {
 });
 
 /// Iterator
-outputString += "export const forEachBuild = (callback: (build: Build) => void): void => {\n";
+outputString += "export const forEachBuild = async (callback: (build: Build) => Promise<void>): Promise<void> => {\n";
 categories.forEach((category) => {
-    outputString += `    ${category}s.forEach((${category}) => {\n`;
+    outputString += `    for (const ${category} of ${category}s) {\n`;
 });
-outputString += `        callback([${categories.join(", ")}]);\n`;
+outputString += `        await callback([${categories.join(", ")}]);\n`;
 categories.forEach(() => {
-    outputString += "    });\n";
+    outputString += "    }\n";
 });
 outputString += "    };\n\n";
 

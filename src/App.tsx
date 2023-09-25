@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { useBuildSelection, useFindOptimalBuild } from "core";
+import { FindOptimalInput, useBuildSelection, useFindOptimalBuild } from "core";
 import { CharacterData, findCharacter, findGlider, findKart, findTire, KartData, TireData, GliderData, getBuildStat, Build, StatKey } from "data";
 import { BuildSelectionInput, BuildTable, StatSelection, StatTable } from "ui";
 
@@ -26,6 +26,13 @@ export const App: React.FC = () => {
         }
         return undefined;
     }, [characterBuild, kartBuild, tireBuild, gliderBuild]);
+
+    const lockedParts = useMemo(() => [
+        characterBuild.locked,
+        kartBuild.locked,
+        tireBuild.locked,
+        gliderBuild.locked,
+    ], [characterBuild, kartBuild, tireBuild, gliderBuild]);
 
     return (
         <>
@@ -98,9 +105,10 @@ export const App: React.FC = () => {
             {
                 build ? 
                     <BuildSection 
-                        build={build}
+                        currentBuild={build}
                         considerStats={considerStats}
                         reversedStats={reversedStats}
+                        lockedParts={lockedParts}
                     />
                 : <p>Please finish selecting parts above </p>
             }
@@ -108,13 +116,10 @@ export const App: React.FC = () => {
     );
 }
 
-const BuildSection: React.FC<{
-    build: Build, 
-    considerStats: StatKey[],
-    reversedStats: StatKey[]
-}> = ({build, considerStats, reversedStats}) => {
-    const stat = getBuildStat(build);
-    const result = useFindOptimalBuild(build, considerStats, reversedStats);
+const BuildSection: React.FC<FindOptimalInput> = (input) => {
+    const { currentBuild, considerStats, reversedStats } = input;
+    const stat = getBuildStat(currentBuild);
+    const result = useFindOptimalBuild(input);
     return (
         <>
             <p>This is your current build</p>
@@ -139,7 +144,7 @@ const BuildSection: React.FC<{
                                 result.moreEfficientBuilds.map((newBuild, index) => (
                                     <li key={index}>
                                         <BuildTable 
-                                            currentBuild={build} 
+                                            currentBuild={currentBuild} 
                                             build={newBuild}
                                             considerStats={considerStats}
                                             reversedStats={reversedStats}

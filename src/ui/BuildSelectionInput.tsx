@@ -10,8 +10,10 @@ export const BuildSelectionInput: React.FC<BuildSelection<string> & {
 }> = ({
     title,
     input,
-    considerStats,
     setInputValue,
+    locked,
+    setLocked,
+    considerStats,
     isPending,
     found,
     unique,
@@ -34,6 +36,7 @@ export const BuildSelectionInput: React.FC<BuildSelection<string> & {
             {
                 input && <InputMessage pending={isPending} items={found} />
             }
+            <input type="checkbox" checked={locked} onChange={() => setLocked(!locked)} /> Lock
             {
                 unique ?
                 <StatTable 

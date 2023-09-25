@@ -7,31 +7,72 @@ export type FindOptimalResult = {
     moreEfficientBuilds: Build[],
 };
 
-export const useFindOptimalBuild = (currentBuild: Build, considerStats: StatKey[], reversedStats: StatKey[]): FindOptimalResult => {
+export type FindOptimalInput = {
+    currentBuild: Build,
+    considerStats: StatKey[],
+    reversedStats: StatKey[],
+    lockedParts: boolean[],
+}
+
+let searchSerial = 0;
+
+export const useFindOptimalBuild = ({currentBuild, considerStats, reversedStats, lockedParts}: FindOptimalInput): FindOptimalResult => {
     const [isPending, startTransition] = useTransition();
+    const [searching, setSearching] = useState<boolean>(false);
     const [result, setResult] = useState<Build[]>([]);
 
     useEffect(() => {
         startTransition(() => {
-            setResult(findMoreEfficientBuilds(currentBuild, considerStats, reversedStats));
+            setSearching(true);
+            searchSerial++;
+            const currentSerial = searchSerial;
+            console.log("search start " + currentSerial);
+            // console.log(lockedParts)
+            findMoreEfficientBuilds({currentBuild, considerStats, reversedStats, lockedParts}).then(builds => {
+                setSearching(false);
+                if (currentSerial !== searchSerial) {
+                    console.log("search cancelled " + currentSerial);
+                    return;
+                }
+                console.log("search end " + currentSerial);
+                setResult(builds);
+            })
         });
-    }, [currentBuild, considerStats, reversedStats]);
+    }, [currentBuild, considerStats, reversedStats, lockedParts]);
 
     return {
-        isPending,
+        isPending: isPending || searching,
         moreEfficientBuilds: result,
     };
 };
 
-const findMoreEfficientBuilds = (currentBuild: Build, considerStats: StatKey[], reversedStats: StatKey[]): Build[] => {
+const findMoreEfficientBuilds = async ({currentBuild, considerStats, reversedStats, lockedParts}: FindOptimalInput): Promise<Build[]> => {
     const output: Build[] = [];
     const currentStat = getBuildStat(currentBuild);
-    forEachBuild((build) => {
+    const testBuild = (build: Build) => {
+        // if build has part changed but that part is locked, ignore it
+        for (let i = 0; i < build.length; i++) {
+            if (lockedParts[i] && build[i] !== currentBuild[i]) {
+                return false;
+            }
+        }
         if (buildEquals(build, currentBuild)) {
-            return;
+            return false;
         }
         const newStat = getBuildStat(build);
-        if (isStatMoreEfficient(currentStat, newStat, considerStats, reversedStats)) {
+        return isStatMoreEfficient(currentStat, newStat, considerStats, reversedStats);
+    };
+    let counter = 0;
+    await forEachBuild(async (build) => {
+        counter++;
+        if (counter % 100 === 0) {
+            await new Promise<void>((resolve) => {
+                setTimeout(() => {
+                    resolve();
+                }, 0);
+            });
+        }
+        if(testBuild(build)) {
             output.push(build);
         }
     });
